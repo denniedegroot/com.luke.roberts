@@ -1,0 +1,100 @@
+{
+  "id": "com.luke-roberts",
+  "version": "1.0.0",
+  "compatibility": ">=1.5.0",
+  "sdk": 2,
+  "name": {
+    "en": "Luke Roberts"
+  },
+  "description": {
+    "en": "Adds support for Luke Robert's smart lamp"
+  },
+  "category": [
+    "lights"
+  ],
+  "permissions": [
+    "homey:wireless:ble"
+  ],
+  "images": {
+    "large": "/assets/images/large.png",
+    "small": "/assets/images/small.png"
+  },
+  "author": {
+    "name": "Dennie de Groot",
+    "email": "mail@denniedegroot.nl",
+    "website": "https://denniedegroot.nl"
+  },
+  "contributors": {
+    "developers": [
+      {
+        "name": "Dennie de Groot",
+        "email": "mail@denniedegroot.nl",
+        "website": "https://denniedegroot.nl"
+      }
+    ]
+  },
+  "contributing": {
+    "donate": {
+      "paypal": {
+        "username": "denniedegroot"
+      }
+    }
+  },
+  "flow": {
+    "actions": [
+      {
+        "id": "set_scene",
+        "title": {
+          "en": "Set a scene",
+          "nl": "Stel een scène in",
+          "de": "Stell ein szene ein"
+        },
+        "args": [
+          {
+            "type": "device",
+            "name": "device",
+            "filter": "driver_id=smart-lamp"
+          },
+          {
+            "name": "scene",
+            "type": "autocomplete"
+          }
+        ]
+      }
+    ]
+  },
+  "drivers": [
+    {
+      "name": {
+        "en": "Smart Lamp"
+      },
+      "class": "light",
+      "capabilities": [
+        "onoff",
+        "dim",
+        "light_saturation",
+        "light_temperature",
+        "light_hue",
+        "light_mode"
+      ],
+      "images": {
+        "large": "/drivers/smart-lamp/assets/images/large.png",
+        "small": "/drivers/smart-lamp/assets/images/small.png"
+      },
+      "pair": [
+        {
+          "id": "list_devices",
+          "template": "list_devices",
+          "navigation": {
+            "next": "add_devices"
+          }
+        },
+        {
+          "id": "add_devices",
+          "template": "add_devices"
+        }
+      ],
+      "id": "smart-lamp"
+    }
+  ]
+}
