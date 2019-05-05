@@ -233,6 +233,14 @@ class SmartLampDevice extends Homey.Device {
 			this.setCapabilityValue('onoff', true);
 		}
 
+		/* Dimming from flow has 2 arguments, we only want to dim, not change colors */
+		if (Object.keys(valueObj).length === 2 && typeof valueObj.dim === 'number') {
+			const buf = Buffer.alloc(1);
+			buf.writeUInt8(Math.round(valueObj.dim * 100), 0);
+
+			return this._api(3, buf);
+		}
+
 		/* Uplight */
 		if (light_mode === 'color') {
 			const buf = Buffer.alloc(7);
