@@ -1,13 +1,20 @@
 {
   "id": "com.luke-roberts",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "compatibility": ">=1.5.0",
   "sdk": 2,
   "name": {
     "en": "Luke Roberts"
   },
   "description": {
-    "en": "Adds support for Luke Robert's smart lamp"
+    "en": "Adds support for Luke Robert's smart lamp",
+    "nl": "Ondersteuning voor Luke Robert's smart lamp",
+    "de": "Unterstützung für Luke Robert's smart lamp"
+  },
+  "tags": {
+    "en": [
+      "fluxo"
+    ]
   },
   "category": [
     "lights"
