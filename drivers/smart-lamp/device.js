@@ -2,8 +2,8 @@
 
 const Homey = require('homey');
 
-const COMMAND_QUEUE_RETRY = 3;
-const BLE_DISCONNECT_TIMEOUT = 30;
+const COMMAND_QUEUE_RETRY = 10;
+const BLE_DISCONNECT_TIMEOUT = 10;
 
 const {
 	SERVICE_UUID,
@@ -66,6 +66,10 @@ class SmartLampDevice extends Homey.Device {
 			clearTimeout(this._connectionTimer);
 			this._connectionTimer = null;
 		}
+	}
+
+	_delay(ms) {
+		return new Promise(resolve => setTimeout(resolve, ms));
 	}
 
 	async _getService() {
@@ -155,6 +159,7 @@ class SmartLampDevice extends Homey.Device {
 			this._commandBusy = true;
 
 			while (this._commandQueue.length > 0) {
+				this._connectionTimerStart(BLE_DISCONNECT_TIMEOUT);
 				const command = this._commandQueue.shift();
 
 				this.log('_processQueue writing', command);
@@ -163,6 +168,11 @@ class SmartLampDevice extends Homey.Device {
 					.catch((error) => {
 						this.log(error.message);
 					});
+
+				/* Wait between commands, if send to fast this gives weird behaviour.
+				 * Ideally we should wait for a response, but the Homey API is limited.
+				 */
+				await this._delay(250);
 			}
 
 			this._commandRetry = 0;
@@ -196,15 +206,13 @@ class SmartLampDevice extends Homey.Device {
 		if (Object.keys(valueObj).length === 1) {
 			if (typeof valueObj.onoff === 'boolean') {
 				if (valueObj.onoff === false)
-					return this.setScene({ id: 0 });
+					return this.setScene({ id: 0x00 });
 
 				return this.setScene({ id: 0xFF });
 			} else if (typeof valueObj.dim === 'number') {
 				/* Any change will turn on the light */
-				if (!this.getCapabilityValue('onoff')) {
+				if (!this.getCapabilityValue('onoff'))
 					this.setScene({ id: 0xFF });
-					this.setCapabilityValue('onoff', true);
-				}
 
 				const buf = Buffer.alloc(1);
 				buf.writeUInt8(Math.round(valueObj.dim * 100), 0);
@@ -228,10 +236,8 @@ class SmartLampDevice extends Homey.Device {
 		if (light_temperature === null) light_temperature = 0.5;
 
 		/* Any change will turn on the light */
-		if (!this.getCapabilityValue('onoff')) {
+		if (!this.getCapabilityValue('onoff'))
 			this.setScene({ id: 0xFF });
-			this.setCapabilityValue('onoff', true);
-		}
 
 		/* Dimming from flow has 2 arguments, we only want to dim, not change colors */
 		if (Object.keys(valueObj).length === 2 && typeof valueObj.dim === 'number') {
@@ -276,6 +282,11 @@ class SmartLampDevice extends Homey.Device {
 	}
 
 	async setScene({ id }) {
+		if (id === 0x00 && this.getCapabilityValue('onoff'))
+			this.setCapabilityValue('onoff', false);
+		else if (!this.getCapabilityValue('onoff'))
+			this.setCapabilityValue('onoff', true);
+
 		const buf = Buffer.alloc(1);
 		buf.writeUInt8(id, 0);
 
