@@ -12,4 +12,4 @@ Adds support for Luke Robert's smart lamp
 * Scene list names (Homey Bluetooth API limitation)
 
 ## Remarks:
-* Changing downlight color temperature needs a future firmware update
+* Changing downlight color temperature needs >1.1.0 lamp firmware
