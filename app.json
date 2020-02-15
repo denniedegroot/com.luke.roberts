@@ -82,8 +82,14 @@
         "light_saturation",
         "light_temperature",
         "light_hue",
-        "light_mode"
+        "light_mode",
+        "measure_power"
       ],
+      "capabilitiesOptions": {
+        "measure_power": {
+          "approximated": true
+        }
+      },
       "images": {
         "large": "/drivers/smart-lamp/assets/images/large.png",
         "small": "/drivers/smart-lamp/assets/images/small.png"

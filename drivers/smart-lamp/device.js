@@ -2,8 +2,9 @@
 
 const Homey = require('homey');
 
-const COMMAND_QUEUE_RETRY = 10;
-const BLE_DISCONNECT_TIMEOUT = 10;
+// Lamp will disconnect after 8 seconds inactivity
+const COMMAND_QUEUE_RETRY = 4;
+const BLE_DISCONNECT_TIMEOUT = 6;
 
 const {
 	SERVICE_UUID,
@@ -11,6 +12,14 @@ const {
 } = require('../../config');
 
 class SmartLampDevice extends Homey.Device {
+
+	static get LAMP_WATT_MIN() {
+		return 0.5;
+	}
+
+	static get LAMP_WATT_MAX() {
+		return 75;
+	}
 
 	onInit() {
 		this.log('SmartLampDevice has been inited');
@@ -48,6 +57,7 @@ class SmartLampDevice extends Homey.Device {
 
 	async _onDeviceInit() {
 		this.setAvailable();
+		this.calculatePower();
 	}
 
 	_connectionTimerStart(timeout) {
@@ -287,12 +297,42 @@ class SmartLampDevice extends Homey.Device {
 		else if (!this.getCapabilityValue('onoff'))
 			this.setCapabilityValue('onoff', true);
 
+		calculatePower();
+
 		const buf = Buffer.alloc(1);
 		buf.writeUInt8(id, 0);
 
 		return this._api(5, buf);
 	}
 
+	async calculatePower() {
+		/* Check if capability exists */
+		if(!this.hasCapability('measure_power')) {
+			if (typeof this.addCapability === 'function') {
+					await this.addCapability('measure_power');
+					await this.setCapabilityOptions('measure_power', {
+						approximated: true,
+					});
+			} else {
+				return;
+			}
+		}
+
+		const {
+			LAMP_WATT_MIN,
+			LAMP_WATT_MAX,
+		} = this.constructor;
+
+		let onoff = this.getCapabilityValue('onoff');
+		let dim = this.getCapabilityValue('dim');
+
+		if( !onoff )
+			dim = 0;
+
+		const usage = LAMP_WATT_MIN + ((LAMP_WATT_MAX - LAMP_WATT_MIN) * dim);
+
+		this.setCapabilityValue('measure_power', usage).catch(this.error);
+	}
 }
 
 module.exports = SmartLampDevice;
