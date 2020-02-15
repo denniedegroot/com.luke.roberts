@@ -1,7 +1,7 @@
 {
   "id": "com.luke-roberts",
-  "version": "1.0.2",
-  "compatibility": ">=1.5.0",
+  "version": "1.1.0",
+  "compatibility": ">=3.0.0",
   "sdk": 2,
   "name": {
     "en": "Luke Roberts"
@@ -42,5 +42,9 @@
           "username": "denniedegroot"
       }
     }
-  }
+  },
+  "bugs": {
+      "url": "https://github.com/denniedegroot/com.luke.roberts/issues"
+  },
+  "source": "https://github.com/denniedegroot/com.luke.roberts"
 }
