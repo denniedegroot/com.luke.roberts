@@ -297,7 +297,7 @@ class SmartLampDevice extends Homey.Device {
 		else if (!this.getCapabilityValue('onoff'))
 			this.setCapabilityValue('onoff', true);
 
-		calculatePower();
+		this.calculatePower();
 
 		const buf = Buffer.alloc(1);
 		buf.writeUInt8(id, 0);
