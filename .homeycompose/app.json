@@ -1,6 +1,6 @@
 {
   "id": "com.luke-roberts",
-  "version": "1.1.1",
+  "version": "1.1.2",
   "compatibility": ">=3.0.0",
   "sdk": 2,
   "name": {
@@ -12,7 +12,9 @@
     "de": "Unterstützung für Luke Robert's smart lamp"
   },
   "tags": {
-    "en": [ "fluxo" ]
+    "en": [
+      "fluxo"
+    ]
   },
   "category": [
     "lights"
@@ -30,21 +32,23 @@
     "website": "https://denniedegroot.nl"
   },
   "contributors": {
-    "developers": [{
-      "name": "Dennie de Groot",
-      "email": "mail@denniedegroot.nl",
-      "website": "https://denniedegroot.nl"
-    }]
+    "developers": [
+      {
+        "name": "Dennie de Groot",
+        "email": "mail@denniedegroot.nl",
+        "website": "https://denniedegroot.nl"
+      }
+    ]
   },
   "contributing": {
     "donate": {
       "paypal": {
-          "username": "denniedegroot"
+        "username": "denniedegroot"
       }
     }
   },
   "bugs": {
-      "url": "https://github.com/denniedegroot/com.luke.roberts/issues"
+    "url": "https://github.com/denniedegroot/com.luke.roberts/issues"
   },
   "source": "https://github.com/denniedegroot/com.luke.roberts"
 }
