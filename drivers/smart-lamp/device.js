@@ -293,9 +293,9 @@ class SmartLampDevice extends Homey.Device {
 
 	async setScene({ id }) {
 		if (id === 0x00 && this.getCapabilityValue('onoff'))
-			this.setCapabilityValue('onoff', false);
+			await this.setCapabilityValue('onoff', false);
 		else if (!this.getCapabilityValue('onoff'))
-			this.setCapabilityValue('onoff', true);
+			await this.setCapabilityValue('onoff', true);
 
 		this.calculatePower();
 
