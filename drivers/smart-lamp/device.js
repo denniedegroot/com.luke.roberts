@@ -98,6 +98,10 @@ class SmartLampDevice extends Homey.Device {
 			return Promise.resolve(null);
 		}
 
+		/* Workaround, connected state is cached in Homey */
+		if (this._device.__peripheral)
+			this._device.__peripheral = null;
+
 		/* Connecting */
 		this.log('_getService connecting');
 		this._connectionTimerStart(BLE_DISCONNECT_TIMEOUT);
