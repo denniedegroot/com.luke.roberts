@@ -216,7 +216,7 @@ class SmartLampDevice extends Homey.Device {
 	}
 
 	async _onCapabilityLight(valueObj) {
-		// if only onoff or brightness
+		// If only onoff or brightness
 		if (Object.keys(valueObj).length === 1) {
 			if (typeof valueObj.onoff === 'boolean') {
 				if (valueObj.onoff === false)
@@ -289,7 +289,7 @@ class SmartLampDevice extends Homey.Device {
 		scenes.push({ id: 0xFF, name: 'Last scene'});
 
 		/* As we cannot read the scenes names yet just create a list */
-		for (let i = 0x01; i <= 0xFE; i++)
+		for (let i = 1; i <= 31; i++)
 			scenes.push({ id: i, name: 'id: ' + i})
 
 		return scenes;

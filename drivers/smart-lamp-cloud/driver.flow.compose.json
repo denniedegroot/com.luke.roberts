@@ -1,0 +1,18 @@
+{
+	"actions": [
+		{
+			"id": "set_scene",
+			"title": {
+				"en": "Set a scene",
+				"nl": "Stel een scène in",
+				"de": "Stell ein szene ein"
+			},
+			"args": [
+				{
+					"name": "scene",
+					"type": "autocomplete"
+				}
+			]
+		}
+	]
+}
