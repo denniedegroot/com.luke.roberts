@@ -1,1 +1,7 @@
-{}
+{
+    "pair": {
+        "title": "Luke Roberts API",
+        "apiManual": "To get your API key visit https://cloud.luke-roberts.com/app. Enter the API key in the form.",
+        "nextButton": "Next"
+    }
+}

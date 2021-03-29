@@ -7,6 +7,11 @@
 				"nl": "Stel een scène in",
 				"de": "Stell ein szene ein"
 			},
+			"titleFormatted": {
+				"en": "Set the scene [[scene]]",
+				"nl": "Stel de scène [[scene]] in",
+				"de": "Stell szene [[scene]] ein"
+			},
 			"args": [
 				{
 					"name": "scene",

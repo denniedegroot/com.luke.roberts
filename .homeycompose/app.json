@@ -1,8 +1,9 @@
 {
   "id": "com.luke-roberts",
   "version": "1.1.2",
-  "compatibility": ">=3.0.0",
-  "sdk": 2,
+  "compatibility": ">=6.0.0",
+  "sdk": 3,
+  "brandColor": "#000000",
   "name": {
     "en": "Luke Roberts"
   },

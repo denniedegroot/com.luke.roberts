@@ -20,6 +20,12 @@
   },
   "pair": [
         {
+            "id": "server_credentials",
+            "options": {
+                "logo": "/app/com.luke-roberts/assets/icon.svg"
+            }
+        },
+        {
             "id": "list_devices",
             "template": "list_devices",
             "navigation": {

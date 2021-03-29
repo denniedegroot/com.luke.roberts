@@ -4,7 +4,7 @@ const Homey = require('homey');
 
 // Lamp will disconnect after 8 seconds inactivity
 const COMMAND_QUEUE_RETRY = 4;
-const BLE_DISCONNECT_TIMEOUT = 6;
+const BLE_DISCONNECT_TIMEOUT = 4;
 
 const {
 	SERVICE_UUID,
@@ -33,31 +33,30 @@ class SmartLampDevice extends Homey.Device {
 			'light_mode',
 			'light_temperature'
 		], this._onCapabilityLight.bind(this), 300);
-		
+
 		const {id} = this.getData();
-		const driver = this.getDriver();
 
 		this._connectionTimer = null;
 		this._commandBusy = false;
 		this._commandQueue = [];
 		this._commandRetry = 0;
+		this._scenes = [];
 
-		driver.ready(() => {
-			try {
-				this._device = driver.getSmartLamp(id);
+		try {
+			this._device = this.driver.getSmartLamp(id);
+			this._onDeviceInit();
+		} catch(err) {
+			this.driver.once(`device:${id}`, device => {
+				this._device = device;
 				this._onDeviceInit();
-			} catch(err) {
-				driver.once(`device:${id}`, device => {
-					this._device = device;
-					this._onDeviceInit();
-				});
-			}
-		});
+			});
+		}
 	}
 
 	async _onDeviceInit() {
 		this.setAvailable();
-		this.calculatePower();
+		this._calculatePower();
+		this._getScenes();
 	}
 
 	_connectionTimerStart(timeout) {
@@ -78,10 +77,6 @@ class SmartLampDevice extends Homey.Device {
 		}
 	}
 
-	_delay(ms) {
-		return new Promise(resolve => setTimeout(resolve, ms));
-	}
-
 	async _getService() {
 		/* Already connected? */
 		if (this._peripheral && this._peripheral.isConnected) {
@@ -97,10 +92,6 @@ class SmartLampDevice extends Homey.Device {
 			this._connectionTimerStart(BLE_DISCONNECT_TIMEOUT);
 			return Promise.resolve(null);
 		}
-
-		/* Workaround, connected state is cached in Homey */
-		if (this._device.__peripheral)
-			this._device.__peripheral = null;
 
 		/* Connecting */
 		this.log('_getService connecting');
@@ -134,7 +125,7 @@ class SmartLampDevice extends Homey.Device {
 		delete this._peripheral;
 
 		// Check if Queue is empty
-		setTimeout(() => { this._processQueue(true); }, 500);
+		setTimeout(() => { this._processQueue(true).catch(() => null); }, 500);
 
 		return Promise.resolve(true);
 	}
@@ -162,7 +153,9 @@ class SmartLampDevice extends Homey.Device {
 				return Promise.resolve(true);
 			}
 
-			const service = await this._getService();
+			this._commandBusy = true;
+
+			const service = await this._getService().catch((error) => this.log(error));
 
 			if (!service) {
 				this.log('_processQueue service missing');
@@ -170,23 +163,54 @@ class SmartLampDevice extends Homey.Device {
 				return Promise.reject(new Error('missing_service'));
 			}
 
-			this._commandBusy = true;
-
 			while (this._commandQueue.length > 0) {
 				this._connectionTimerStart(BLE_DISCONNECT_TIMEOUT);
 				const command = this._commandQueue.shift();
 
 				this.log('_processQueue writing', command);
 
+				const characteristic = await service.getCharacteristic(API_CHARACTERISTIC_UUID);
+				await characteristic.subscribeToNotifications(async (data) => {
+					this.log('_processQueue notification:', data);
+
+					/* Opcode for scenes */
+					if (command[2] == 0x01) {
+						if (data.lenght < 2 || data[0] != 0x00)
+							return;
+
+						let next_scene = data[2];
+						let buf = Buffer.alloc(data.length - 2);
+
+						buf = data.slice(3, data.length);
+						this._scenes.push({ id: command[3], name: buf.toString().trim()});
+
+						/* Retrieve next scene */
+						if (next_scene != 0xFF) {
+							const buf = Buffer.alloc(1);
+							buf.writeUInt8(next_scene, 0);
+							this._api(1, buf);
+						}
+					/* Opcodes for light changes */
+					} else if (command[2] == 0x02 || command[2] == 0x03 || command[2] == 0x05) {
+						if (data[0] != 0x00)
+							return;
+
+						/* Any change will turn on the light */
+						if (command[2] == 0x05 && command[3] == 0x00 && this.getCapabilityValue('onoff'))
+							await this.setCapabilityValue('onoff', false);
+						else if (!this.getCapabilityValue('onoff'))
+							await this.setCapabilityValue('onoff', true);
+
+						this._calculatePower();
+					}
+
+					await characteristic.unsubscribeFromNotifications();
+				});
+
 				await service.write(API_CHARACTERISTIC_UUID, command)
 					.catch((error) => {
 						this.log(error.message);
 					});
-
-				/* Wait between commands, if send to fast this gives weird behaviour.
-				 * Ideally we should wait for a response, but the Homey API is limited.
-				 */
-				await this._delay(250);
 			}
 
 			this._commandRetry = 0;
@@ -194,6 +218,7 @@ class SmartLampDevice extends Homey.Device {
 
 			return Promise.resolve(true);
 		} catch (error) {
+			this._commandBusy = false;
 			this.log(error.message);
 			this._disconnect();
 
@@ -210,7 +235,7 @@ class SmartLampDevice extends Homey.Device {
 			v = 0x02;
 
 		this._commandQueue.push(Buffer.concat([Buffer.from([ 0xA0, v, cmd ]), data]));
-		await this._processQueue(false);
+		await this._processQueue(false).catch(() => null);
 
 		return Promise.resolve(true);
 	}
@@ -283,33 +308,7 @@ class SmartLampDevice extends Homey.Device {
 		}
 	}
 
-	async getScenes() {
-		let scenes = [];
-		scenes.push({ id: 0x00, name: 'Off'});
-		scenes.push({ id: 0xFF, name: 'Last scene'});
-
-		/* As we cannot read the scenes names yet just create a list */
-		for (let i = 1; i <= 31; i++)
-			scenes.push({ id: i, name: 'id: ' + i})
-
-		return scenes;
-	}
-
-	async setScene({ id }) {
-		if (id === 0x00 && this.getCapabilityValue('onoff'))
-			await this.setCapabilityValue('onoff', false);
-		else if (!this.getCapabilityValue('onoff'))
-			await this.setCapabilityValue('onoff', true);
-
-		this.calculatePower();
-
-		const buf = Buffer.alloc(1);
-		buf.writeUInt8(id, 0);
-
-		return this._api(5, buf);
-	}
-
-	async calculatePower() {
+	async _calculatePower() {
 		/* Check if capability exists */
 		if(!this.hasCapability('measure_power')) {
 			if (typeof this.addCapability === 'function') {
@@ -336,6 +335,26 @@ class SmartLampDevice extends Homey.Device {
 		const usage = LAMP_WATT_MIN + ((LAMP_WATT_MAX - LAMP_WATT_MIN) * dim);
 
 		this.setCapabilityValue('measure_power', usage).catch(this.error);
+	}
+
+	async _getScenes() {
+		this._scenes = [];
+
+		/* Retrieve first scene, the rest will follow */
+		const buf = Buffer.alloc(1);
+		buf.writeUInt8(0x00, 0);
+		this._api(1, buf);
+	}
+
+	async getScenesNames() {
+		return this._scenes;
+	}
+
+	async setScene({ id }) {
+		const buf = Buffer.alloc(1);
+		buf.writeUInt8(id, 0);
+
+		return this._api(5, buf);
 	}
 }
 

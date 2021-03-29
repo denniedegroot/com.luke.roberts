@@ -99,7 +99,7 @@ class SmartLampCloudDevice extends Homey.Device {
 		});
 	}
 
-	async getScenes() {
+	async getScenesNames() {
 		let scenes = [];
 		scenes.push({ id: 0x00, name: 'Off'});
 		scenes.push({ id: 0xFF, name: 'Last scene'});

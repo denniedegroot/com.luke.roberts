@@ -13,14 +13,12 @@ class SmartLampDriver extends Homey.Driver {
 		this._devices = {};
 		this.discover();
 		
-		new Homey.FlowCardAction('set_scene')
-			.register()
+		this.homey.flow.getActionCard('set_scene')
 			.registerRunListener(({ device, scene }) => {
 				return device.setScene(scene);
 			})
-			.getArgument('scene')
-			.registerAutocompleteListener(async (query, { device }) => {
-				const scenes = await device.getScenes();
+			.registerArgumentAutocompleteListener('scene', async (query, { device }) => {
+				const scenes = await device.getScenesNames();
 				return scenes.filter(scene => {
 					return scene.name.toLowerCase().indexOf(query.toLowerCase()) > -1;
 				});
@@ -28,7 +26,7 @@ class SmartLampDriver extends Homey.Driver {
 	}
 
 	discover() {
-		Homey.ManagerBLE.discover([ SERVICE_UUID ], 1000)
+		this.homey.ble.discover([ SERVICE_UUID ], 1000)
 			.then(devices => {
 				devices.forEach(device => {
 					if( this._devices[device.id] ) return;
@@ -40,8 +38,8 @@ class SmartLampDriver extends Homey.Driver {
 			.catch(this.error);
 	}
 
-	onPairListDevices( data, callback ) {
-		callback( null, Object.keys(this._devices).map(deviceId => {
+	async onPairListDevices( data ) {
+		return await Promise.all(Object.keys(this._devices).map(deviceId => {
 			return {
 				name: 'Smart Lamp',
 				data: {
