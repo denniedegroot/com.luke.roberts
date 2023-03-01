@@ -4,7 +4,8 @@ const Homey = require('homey');
 
 // Lamp will disconnect after 8 seconds inactivity
 const COMMAND_QUEUE_RETRY = 4;
-const BLE_DISCONNECT_TIMEOUT = 4;
+const BLE_DISCONNECT_TIMEOUT = 12;
+const BLE_SEARCH_TIMEOUT = 30;
 
 const {
 	SERVICE_UUID,
@@ -21,7 +22,7 @@ class SmartLampDevice extends Homey.Device {
 		return 75;
 	}
 
-	onInit() {
+	async onInit() {
 		this.log('SmartLampDevice has been inited');
 		this.setUnavailable();
 
@@ -34,29 +35,33 @@ class SmartLampDevice extends Homey.Device {
 			'light_temperature'
 		], this._onCapabilityLight.bind(this), 300);
 
-		const {id} = this.getData();
-
+		this._device = null;
 		this._connectionTimer = null;
 		this._commandBusy = false;
 		this._commandQueue = [];
 		this._commandRetry = 0;
 		this._scenes = [];
 
-		try {
-			this._device = this.driver.getSmartLamp(id);
-			this._onDeviceInit();
-		} catch(err) {
-			this.driver.once(`device:${id}`, device => {
-				this._device = device;
-				this._onDeviceInit();
-			});
-		}
+		this._searchDevice(0);
 	}
 
 	async _onDeviceInit() {
 		this.setAvailable();
 		this._calculatePower();
 		this._getScenes();
+	}
+
+	async _searchDevice(timeout) {
+		setTimeout(async () => {
+			const {id} = this.getData();
+			this._device = await this.homey.ble.find(id);
+
+			if (this._device != null && this._device.id == id) {
+				this._onDeviceInit();
+			} else {
+				this._searchDevice(BLE_SEARCH_TIMEOUT);
+			}
+		}, timeout * 1000);
 	}
 
 	_connectionTimerStart(timeout) {
@@ -97,6 +102,10 @@ class SmartLampDevice extends Homey.Device {
 		this.log('_getService connecting');
 		this._connectionTimerStart(BLE_DISCONNECT_TIMEOUT);
 		this._peripheral = await this._device.connect();
+
+		this._peripheral.once('disconnect', async () => {
+			this._disconnect();
+		});
 
 		await this._peripheral.discoverAllServicesAndCharacteristics();
 		const BLEservice = await this._peripheral.getService(SERVICE_UUID);

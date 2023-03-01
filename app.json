@@ -9,13 +9,15 @@
     "en": "Luke Roberts"
   },
   "description": {
-    "en": "Adds support for Luke Robert's smart lamp",
-    "nl": "Ondersteuning voor Luke Robert's smart lamp",
-    "de": "Unterstützung für Luke Robert's smart lamp"
+    "en": "Take your lighting personal",
+    "nl": "Neem je verlichting persoonlijk",
+    "de": "Mach Beleuchtung zu deiner persönlichen Sache"
   },
   "tags": {
     "en": [
-      "fluxo"
+      "fluxo",
+      "luvo",
+      "luke roberts"
     ]
   },
   "category": [

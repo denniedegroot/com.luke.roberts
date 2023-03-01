@@ -11,7 +11,6 @@ class SmartLampDriver extends Homey.Driver {
 		this.log('SmartLampDriver has been inited');
 		
 		this._devices = {};
-		this.discover();
 		
 		this.homey.flow.getActionCard('set_scene')
 			.registerRunListener(({ device, scene }) => {
@@ -25,20 +24,27 @@ class SmartLampDriver extends Homey.Driver {
 			});
 	}
 
-	discover() {
-		this.homey.ble.discover([ SERVICE_UUID ], 1000)
+	async discover() {
+		this._devices = {};
+
+		await this.homey.ble.discover([ SERVICE_UUID ])
 			.then(devices => {
 				devices.forEach(device => {
-					if( this._devices[device.id] ) return;
+					if (this._devices[device.id])
+						return;
+
 					this.log(`Found device: ${device.id}`)
 					this._devices[device.id] = device;
-					this.emit(`device:${device.id}`, device);
 				})
 			})
 			.catch(this.error);
 	}
 
 	async onPairListDevices( data ) {
+		this.log('onPairListDevices');
+
+		await this.discover();
+
 		return await Promise.all(Object.keys(this._devices).map(deviceId => {
 			return {
 				name: 'Smart Lamp',
@@ -47,13 +53,6 @@ class SmartLampDriver extends Homey.Driver {
 				}
 			}
 		}));
-	}
-
-	getSmartLamp(id) {
-		if( !this._devices[id] )
-			throw new Error('invalid_device');
-			
-		return this._devices[id];
 	}
 
 }
